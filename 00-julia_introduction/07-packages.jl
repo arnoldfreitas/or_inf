@@ -23,6 +23,7 @@ Pkg.add("Plots")
 Pkg.add("StatsPlots")
 Pkg.add("Graphs")
 Pkg.add("GraphPlot")
+Pkg.add("GraphsFlows")
 
 # once u created an environment in your current working directory you can set this env as default env in vscode
 

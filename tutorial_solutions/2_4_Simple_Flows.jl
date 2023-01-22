@@ -48,7 +48,7 @@ value.(f)
 # # 2.4
 U = [ # adjacency capacity matrix
     0 12 10 0 0 0
-    0 0 10 9 0 0
+    0 0 10 9 2 0
     0 6 0 2 8 0 
     0 0 0 0 0 20 
     0 0 0 0 0 7 
@@ -70,13 +70,23 @@ m = Model(Clp.Optimizer)
 @constraint(m, edge_capacity[i=v_list, j=v_list], f[i,j] <= U[i,j])
 @constraint(m, nodal_balance[i=v_list], sum(f[i,j] for j in v_list) == b[i])
 @constraint(m, antisymmetric[i=v_list, j=v_list], f[i,j] == -f[j,i])
+# @constraint(m, cost_node[i=edgs, j=edgs], C[i,j]*f[i,j] >=0)
+
+
 @objective(m, Min, sum(f[i,j]*C[i,j] for i in v_list, j in v_list))
 optimize!(m)
 
 objective_value(m)
 value.(f)
-
-
+f = [
+    0.0   8.0  10.0    0.0   0.0   0.0
+    -8.0   0.0  -3.0    9.0   2.0   0.0
+   -10.0   3.0   0.0    2.0   5.0   0.0
+    -0.0  -9.0  -2.0    0.0   0.0  11.0
+    -0.0  -2.0  -5.0   -0.0   0.0   7.0
+    -0.0  -0.0  -0.0  -11.0  -7.0   0.0
+]
+cost = [C[i,j]*value.(f)[i,j] for i in v_list, j in v_list]
 
 
 

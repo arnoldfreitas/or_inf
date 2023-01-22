@@ -2,7 +2,7 @@
 
 julia_version = "1.8.2"
 manifest_format = "2.0"
-project_hash = "f6bbe5101a2e573ee7c26e69160716d6d55857eb"
+project_hash = "dff29ea7db98937106b0cf468eb44edd3fae2fb2"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -409,6 +409,12 @@ deps = ["ArnoldiMethod", "Compat", "DataStructures", "Distributed", "Inflate", "
 git-tree-sha1 = "ba2d094a88b6b287bd25cfa86f301e7693ffae2f"
 uuid = "86223c79-3864-5bf0-83f7-82e725a168b6"
 version = "1.7.4"
+
+[[deps.GraphsFlows]]
+deps = ["Graphs", "JuMP", "LinearAlgebra", "Markdown", "SimpleTraits", "SparseArrays"]
+git-tree-sha1 = "c00a68bafabb86a79b88d82b400dcecf653450f7"
+uuid = "06909019-6f44-4949-96fc-b9d9aaa02889"
+version = "0.1.1"
 
 [[deps.Grisu]]
 git-tree-sha1 = "53bb909d1151e57e2484c3d1b53e19552b887fb2"
