@@ -24,6 +24,9 @@ Pkg.add("StatsPlots")
 Pkg.add("Graphs")
 Pkg.add("GraphPlot")
 Pkg.add("GraphsFlows")
+Pkg.add("Complementarity")
+Pkg.add("Ipopt")
+Pkg.add("SCIP")
 
 # once u created an environment in your current working directory you can set this env as default env in vscode
 

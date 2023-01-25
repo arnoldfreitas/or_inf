@@ -4,6 +4,8 @@ fuels = ["Power", "Heat", "Coal", "Gas"]
 
 VariableCost = Dict(zip(technologies, [0.01,0.2,0.3,1,1,1,1,1]))
 InvestmentCost = Dict(zip(technologies, [1,0,0,1,1,1,1])) 
+EmissionRate = Dict(zip(technologies, [0,0,0,2,1,2,1])) 
+EmissionLimit = 20
 
 OutputRatio = Dict()
 for t in technologies, f in fuels
@@ -36,11 +38,20 @@ ESM = Model(Clp.Optimizer)
 @variable(ESM,Production[technologies, fuels] >= 0)
 @variable(ESM,Capacity[technologies] >=0)
 @variable(ESM,Use[technologies, fuels] >=0)
+@variable(ESM,Emissions[technologies] >=0)
 
+# Energy Balance constraint
 @constraint(ESM, DemandAdequacy[f in fuels], sum(Production[t,f] for t in technologies) >= Demand[f] + sum(Use[t,f] for t in technologies))
+# Const Function constraint
 @constraint(ESM, ProductionCost[t in technologies], sum(Production[t,f] for f in fuels)*VariableCost[t]+Capacity[t]*InvestmentCost[t] == TotalCost[t])
+# Production Cap constraint
 @constraint(ESM, ProductionFuntion[t in technologies, f in fuels], OutputRatio[t,f]*Capacity[t] >= Production[t,f])
+# Use Cap constraint
 @constraint(ESM, UseFunction[t in technologies, f in fuels], InputRatio[t,f]*sum(Production[t,ff] for ff in fuels) == Use[t,f])
+# Emission Cap constraint
+@constraint(ESM, TechnologyEmissions[t in technologies], sum(Production[t,f] for f in fuels)*EmissionRate[t] == Emissions[t])
+@constraint(ESM, TotalEmissionsFunction, sum(Emissions[t] for t in technologies) <= EmissionLimit)
+
 @objective(ESM, Min, sum(TotalCost[t] for t in technologies))
 
 optimize!(ESM)
@@ -48,4 +59,6 @@ objective_value(ESM)
 
 value.(Production)
 value.(Capacity)
+value.(Emissions)
+TotalEmissions = sum(value.(Emissions))
 

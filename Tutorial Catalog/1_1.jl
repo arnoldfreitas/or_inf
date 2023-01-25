@@ -28,3 +28,8 @@ optimize!(m)
 objective_value(m)
 
 println([[s, value.(quant[s])] for s in products])
+"""
+17000.0
+
+Vector{Any}[[\"Fance\", 5.000000000000001], [\"Gazebo\", 2.9999999999999996]]
+"""
