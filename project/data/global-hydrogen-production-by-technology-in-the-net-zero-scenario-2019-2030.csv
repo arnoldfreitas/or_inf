@@ -1,0 +1,8 @@
+Source: IEA. Licence: CC BY 4.0
+This data is subject to the IEA's terms and conditions: https://www.iea.org/t_c/termsandconditions/
+Units: Mt H2
+0,Fossil fuels without CCUS,Fossil fuels with CCUS,By-product,Electricity,Bioenergy
+2019,74.2,0.6,16.4,0,0.03
+2020,72.7,0.6,16,0,0.03
+2021,77.1,0.6,16.5,0,0.03
+2030,71.7,33.0,13.4,61.7,0.18
