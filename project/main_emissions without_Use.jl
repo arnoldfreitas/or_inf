@@ -4,29 +4,23 @@ technologies =[
     "SolarPV", "WindOnshore", "WindOffshore", "Hydro", "BiomassCHP", "CoalMine", 
     "GasExtractor", "CoalPowerPlant", "GasPowerPlant", "CoalCHPPlant",
     "GasCHPPlant", "Power2Heat", "CoalGazification", "SteamMethaneReforming", 
-    "Electrolysis", "FuelCell"]
+    "Electrolysis"]
 
 fuels = ["Coal", "Gas", "Power", "Heat", "H2"]
-Demand = Dict(zip(fuels,[0, 0, 610, 1100, 0]*1e6)) # everything there is expressed as MWh in a year
+Demand = Dict(zip(fuels,[0, 0, 610, 1100, 90]*1e6)) # everything there is expressed as MWh in a year
 
 # Costs
-InvestmentCost = Dict(zip(technologies, [390, 1000, 2580, 2200, 2990, 0, 0, 1600, 607, 2030, 977, 0, 0, 0, 380, 2080]*1e-3)) # expressed as Mio Eur / Mwh in a year -> need to rescale by the lifetime (research annuity factor)
-VariableCost  = Dict(zip(technologies, [0, 0, 0, 0, 0, 0, 0, 130, 230, 130, 230, 0, 30.03, 30.03, 1.188, 22.9]*1e-6)) # Mio Eur / Mwh
-# VariableCost  = Dict(zip(technologies, [0, 0, 0, 0, 0, 27.52, 128.1, 130, 230, 130, 230, 0, 30.03, 30.03, 1.188, 22.9]*1e-6)) # Mio Eur / Mwh
+InvestmentCost = Dict(zip(technologies, [390, 1000, 2580, 2200, 2990, 0, 0, 1600, 607, 2030, 977, 0, 0, 0, 380]*1e-3)) # expressed as Mio Eur / Mwh in a year -> need to rescale by the lifetime (research annuity factor)
+VariableCost  = Dict(zip(technologies, [0, 0, 0, 0, 0, 0, 0, 130, 230, 130, 230, 0, 30.03, 60.06, 1.188]*1e-6)) # Mio Eur / Mwh
 
 # Avg capacity Ratio
-# CapacityFactor = Dict(zip(technologies, [0.15, 0.3, 0.4, 0.35, 0.6, 0.4, 0.4, 0.6, 0.6, 0.6, 0.6, 0.25, 0.5, 0.5, 0.25])) 
-CapacityFactor = Dict(zip(technologies, [0.15, 0.3, 0.4, 0.35, 0.6, 0.4, 0.4, 0.6, 0.6, 0.6, 0.6, 0.25, 0.5, 0.5, 0.25, 0.6])) 
+CapacityFactor = Dict(zip(technologies, [0.15, 0.3, 0.4, 0.35, 0.6, 0.4, 0.4, 0.6, 0.6, 0.6, 0.6, 0.25, 0.5, 0.5, 0.25])) 
 # FullLoadHours = Dict(zip(technologies, [1414, 2628, 3504, 3066, 5256, 3500, 3500, 5256, 5256, 5256, 5256, 2000, 4000, 4000, 2000])) 
 
 # Emissions
-DirectEmissionsRatio = Dict(zip(technologies, [0, 0, 0, 0, 230, 0, 0, 900, 500, 700, 180, 350, 60, 24, 0, 0]))
-UpstreamtEmissionsRatio = Dict(zip(technologies, [29, 15, 17, 19, 0, 0, 0, 9.6, 1.6, 9.6, 1.6, 0, 6, 15, 0, 0]))
-# UpstreamtEmissionsRatio = Dict(zip(technologies, [29, 15, 17, 19, 0, 83, 216, 9.6, 1.6, 9.6, 1.6, 0, 6, 15, 0, 0]))
-
-EmissionsRatio = merge(+, DirectEmissionsRatio, UpstreamtEmissionsRatio)
-println(EmissionsRatio)
-
+DirectEmissionsRatio = Dict(zip(technologies, [0, 0, 0, 0, 230, 0, 0, 900, 500, 700, 180, 350, 60, 24, 0]))
+UpstreamtEmissionsRatio = Dict(zip(technologies, [29, 15, 17, 19, 0, 0, 0, 9.6, 1.6, 9.6, 1.6, 0, 6, 15, 0]))
+EmissionsRatio = merge(+, DirectEmissionsRatio, UpstreamtEmissionsRatio) # kgCO2e / MWh
 
 OutputRatio = Dict()
 for t in technologies, f in fuels
@@ -50,7 +44,7 @@ OutputRatio["Power2Heat", "Heat"] = 0.95
 OutputRatio["CoalGazification", "H2"] = 0.7
 OutputRatio["SteamMethaneReforming", "H2"] = 0.7
 OutputRatio["Electrolysis", "H2"] = 0.7
-OutputRatio["FuelCell", "Power"] = 0.6
+# OutputRatio["FuelCell", "Power"] = 0.6
 
 InputRatio = Dict()
 for t in technologies, f in fuels
@@ -64,7 +58,7 @@ InputRatio["Power2Heat", "Power"] = 1
 InputRatio["CoalGazification","Coal"] = 1
 InputRatio["SteamMethaneReforming","Gas"] = 1
 InputRatio["Electrolysis","Power"] = 1
-InputRatio["FuelCell","H2"] = 1
+# InputRatio["FuelCell","H2"] = 1
 
 
 ESM = Model(Clp.Optimizer)
@@ -73,25 +67,25 @@ ESM = Model(Clp.Optimizer)
 @variable(ESM,CostByTechnology[technologies]>=0)
 @variable(ESM,Production[technologies, fuels] >= 0)
 @variable(ESM,Capacity[technologies] >=0) # 
-@variable(ESM,Use[technologies, fuels] >=0)
-@variable(ESM,UnservedDemand[fuels] == 0)
+# @variable(ESM,Use[technologies, fuels] >=0)
+@variable(ESM,UnservedDemand[fuels] >= 0)
 
 # CONSTRAINTS ---------------------------
 @constraint(ESM, TechnologyEmissions[t in technologies], sum(Production[t,f] for f in fuels)*EmissionsRatio[t] == Emissions[t])
 
 @constraint(ESM, ProductionFuntion[t in technologies, f in fuels], OutputRatio[t,f]*(CapacityFactor[t]*8760)*Capacity[t] >= Production[t,f])
-@constraint(ESM, UseFunction[t in technologies, f in fuels], InputRatio[t,f]*sum(Production[t,ff] for ff in fuels) == Use[t,f])
+# @constraint(ESM, UseFunction[t in technologies, f in fuels], InputRatio[t,f]*sum(Production[t,ff] for ff in fuels) == Use[t,f])
 
-@constraint(ESM, DemandAdequacy[f in fuels], sum(Production[t,f] for t in technologies) >= Demand[f] + sum(Use[t,f] for t in technologies))
+# @constraint(ESM, DemandAdequacy[f in fuels], sum(Production[t,f] for t in technologies) >= Demand[f] + sum(Use[t,f] for t in technologies))
 # @constraint(ESM, DemandAdequacy[f in fuels], sum(Production[t,f] for t in technologies) + UnservedDemand[f] >= Demand[f] + sum(Use[t,f] for t in technologies)) # slack variable for debugging
-# @constraint(ESM, DemandAdequacy[f in fuels], sum(Production[t,f] for t in technologies) + UnservedDemand[f] >= Demand[f]) # slack variable for debugging
+@constraint(ESM, DemandAdequacy[f in fuels], sum(Production[t,f] for t in technologies) + UnservedDemand[f] >= Demand[f]) # slack variable for debugging
 
 
 # @constraint(ESM, ProductionCost[t in technologies], sum(Production[t,f] for f in fuels)*VariableCost[t]+Capacity[t]*InvestmentCost[t] == CostByTechnology[t])
 @constraint(ESM, ProductionCost[t in technologies], sum(Production[t,f] for f in fuels)*VariableCost[t] == CostByTechnology[t])
 
 # Max Capacities
-MaxCapacity = Dict(zip(technologies, [100, 71, 20, 4.3, 7.5, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf]*1e3)) # in MW, constraint based on condition or sufficiently high value (1e9)
+MaxCapacity = Dict(zip(technologies, [100, 71, 20, 4.3, 7.5, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf]*1e3)) # in MW, constraint based on condition or sufficiently high value (1e9)
 for t in technologies
     if MaxCapacity[t] != Inf
         @constraint(ESM, Capacity[t] <= MaxCapacity[t])
@@ -107,7 +101,6 @@ MaxProdGas = Dict(zip(["Power", "Heat"], [70, 588]*1e6)) # in MWh
 @constraint(ESM, CoalProductionConstraint[f in ["Power", "Heat"]], sum(Production[t,f] for t in ["CoalPowerPlant", "CoalCHPPlant", "CoalGazification"]) <= MaxProdCoal[f])
 @constraint(ESM, GasProductionConstraint[f in ["Power", "Heat"]], sum(Production[t,f] for t in ["GasPowerPlant", "GasCHPPlant", "SteamMethaneReforming"]) <= MaxProdGas[f])
 
-
 # contraints to test emissions of H2 production modes
 # @constraint(ESM, ElectrolysisContraint, Production["Electrolysis","H2"] >= 1e6)
 # @constraint(ESM, CoalGazificationContraint, Production["CoalGazification","H2"] == 1e6)
@@ -117,18 +110,15 @@ MaxProdGas = Dict(zip(["Power", "Heat"], [70, 588]*1e6)) # in MWh
 # OPTIMIZATION ---------------------
 # @objective(ESM, Min, sum(CostByTechnology[t] for t in technologies))
 # @objective(ESM, Min, sum(CostByTechnology[t] for t in technologies) + 1e+3*sum(UnservedDemand[f] for f in fuels))
-# @objective(ESM, Min, sum(Emissions[t] for t in technologies) + 1e+6*sum(UnservedDemand[f] for f in fuels))
-@objective(ESM, Min, sum(Emissions[t] for t in technologies))
+@objective(ESM, Min, sum(Emissions[t] for t in technologies) + 1e+6*sum(UnservedDemand[f] for f in fuels))
 
 
 optimize!(ESM)
 objective_value(ESM)
 
-value.(CostByTechnology) # in MEur
 value.(Production).data[:,3:end]*1e-6 # in TWh
 value.(Capacity).data*1e-3 # in GW
 value.(UnservedDemand).data[3:end]*1e-6 # in TWh
-value.(Emissions).data
 # value.(Use).data*1e-6 
 
 # RESULTS ---------------------------
@@ -152,8 +142,7 @@ padded_vector = vcat(value.(Capacity).data*1e-3 , fill(missing, 3)) # Capacities
 insertcols!(df, ncol(df)+1, :Capacity_GW => padded_vector)
 
 df_max_cap = DataFrame(Technology=collect(keys(MaxCapacity)), MaxCapacity_GW=collect(values(MaxCapacity))*1e-3) # Capacities in GW
-# df = outerjoin(df, df_max_cap, on = :Technology, order=:left, matchmissing=:equal)
-df = outerjoin(df, df_max_cap, on = :Technology, matchmissing=:equal)
+df = outerjoin(df, df_max_cap, on = :Technology, order=:left, matchmissing=:equal)
 
 # insert cost column
 padded_vector = vcat(value.(CostByTechnology).data , fill(missing, 3))
@@ -163,6 +152,5 @@ insertcols!(df, ncol(df)+1, :Cost_MiEUR => padded_vector)
 padded_vector = vcat(value.(Emissions).data*1e-9 , fill(missing, 3))
 insertcols!(df, ncol(df)+1, :Emissions_MtCO2e => padded_vector)
 
-filepath = joinpath(@__DIR__, "results/results_fuelcell_minemissions.csv")
-# filepath = joinpath(@__DIR__, "results/results_fuelcell_minemissions_withEmissionsCosts_CoalGas.csv")
-CSV.write(filepath, df)
+CSV.write("results/results_emissions_no_use.csv", df)
+

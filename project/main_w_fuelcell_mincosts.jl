@@ -11,8 +11,9 @@ Demand = Dict(zip(fuels,[0, 0, 610, 1100, 0]*1e6)) # everything there is express
 
 # Costs
 InvestmentCost = Dict(zip(technologies, [390, 1000, 2580, 2200, 2990, 0, 0, 1600, 607, 2030, 977, 0, 0, 0, 380, 2080]*1e-3)) # expressed as Mio Eur / Mwh in a year -> need to rescale by the lifetime (research annuity factor)
-VariableCost  = Dict(zip(technologies, [0, 0, 0, 0, 0, 0, 0, 130, 230, 130, 230, 0, 30.03, 60.06, 1.188, 22.9]*1e-6)) # Mio Eur / Mwh
-
+VariableCost  = Dict(zip(technologies, [0, 0, 0, 0, 0, 0, 0, 130, 230, 130, 230, 0, 30.03, 30.03, 1.188, 22.9]*1e-6)) # Mio Eur / Mwh
+# VariableCost  = Dict(zip(technologies, [0, 0, 0, 0, 0, 27.52, 128.1, 130, 230, 130, 230, 0, 30.03, 30.03, 1.188, 22.9]*1e-6)) # Mio Eur / Mwh
+print(VariableCost)
 # Avg capacity Ratio
 # CapacityFactor = Dict(zip(technologies, [0.15, 0.3, 0.4, 0.35, 0.6, 0.4, 0.4, 0.6, 0.6, 0.6, 0.6, 0.25, 0.5, 0.5, 0.25])) 
 CapacityFactor = Dict(zip(technologies, [0.15, 0.3, 0.4, 0.35, 0.6, 0.4, 0.4, 0.6, 0.6, 0.6, 0.6, 0.25, 0.5, 0.5, 0.25, 0.6])) 
@@ -21,9 +22,8 @@ CapacityFactor = Dict(zip(technologies, [0.15, 0.3, 0.4, 0.35, 0.6, 0.4, 0.4, 0.
 # Emissions
 DirectEmissionsRatio = Dict(zip(technologies, [0, 0, 0, 0, 230, 0, 0, 900, 500, 700, 180, 350, 60, 24, 0, 0]))
 UpstreamtEmissionsRatio = Dict(zip(technologies, [29, 15, 17, 19, 0, 0, 0, 9.6, 1.6, 9.6, 1.6, 0, 6, 15, 0, 0]))
-# DirectEmissionsRatio = Dict(zip(technologies, [0, 0, 0, 0, 230, 0, 0, 900, 500, 700, 180, 350, 60, 24, 0]))
-# UpstreamtEmissionsRatio = Dict(zip(technologies, [29, 15, 17, 19, 0, 0, 0, 9.6, 1.6, 9.6, 1.6, 0, 6, 15, 0]))
-# EmissionsRatio = Dict(zip(technologies, collect(values(DirectEmissionsRatio)) + collect(values(UpstreamtEmissionsRatio)))) # kgCO2e / MWh
+# UpstreamtEmissionsRatio = Dict(zip(technologies, [29, 15, 17, 19, 0, 83, 216, 9.6, 1.6, 9.6, 1.6, 0, 6, 15, 0, 0]))
+
 EmissionsRatio = merge(+, DirectEmissionsRatio, UpstreamtEmissionsRatio)
 println(EmissionsRatio)
 
@@ -104,8 +104,8 @@ end
 # Max Production
 MaxProdCoal = Dict(zip(["Power", "Heat"], [140, 60]*1e6)) # in MWh
 MaxProdGas = Dict(zip(["Power", "Heat"], [70, 588]*1e6)) # in MWh
-@constraint(ESM, CoalProductionConstraint[f in ["Power", "Heat"]], sum(Production[t,f] for t in ["CoalPowerPlant", "CoalCHPPlant"]) <= MaxProdCoal[f])
-@constraint(ESM, GasProductionConstraint[f in ["Power", "Heat"]], sum(Production[t,f] for t in ["GasPowerPlant", "GasCHPPlant"]) <= MaxProdGas[f])
+@constraint(ESM, CoalProductionConstraint[f in ["Power", "Heat"]], sum(Production[t,f] for t in ["CoalPowerPlant", "CoalCHPPlant", "CoalGazification"]) <= MaxProdCoal[f])
+@constraint(ESM, GasProductionConstraint[f in ["Power", "Heat"]], sum(Production[t,f] for t in ["GasPowerPlant", "GasCHPPlant", "SteamMethaneReforming"]) <= MaxProdGas[f])
 
 # contraints to test emissions of H2 production modes
 # @constraint(ESM, ElectrolysisContraint, Production["Electrolysis","H2"] >= 1e6)
@@ -163,4 +163,5 @@ padded_vector = vcat(value.(Emissions).data*1e-9 , fill(missing, 3))
 insertcols!(df, ncol(df)+1, :Emissions_MtCO2e => padded_vector)
 
 filepath = joinpath(@__DIR__, "results/results_fuelcell_mincosts.csv")
+# filepath = joinpath(@__DIR__, "results/results_fuelcell_mincosts_withEmissionsCosts_CoalGas.csv")
 CSV.write(filepath, df)
